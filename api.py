@@ -1,14 +1,51 @@
 import glob
 import time
-from flask import Flask
+import json
+from flask import Flask, jsonify
 from flask_restful import reqparse, abort, Api, Resource
 from datetime import datetime
+import platform
+
 
 app = Flask(__name__)
 api = Api(app)
-base_dir = '/sys/bus/w1/devices/'
-device_folder = glob.glob(base_dir + '28*')[0]
-device_file = device_folder + '/w1_slave'
+os = platform.system()
+if os == 'Linux':
+    base_dir = '/sys/bus/w1/devices/'
+    device_folder = glob.glob(base_dir + '28*')[0]
+    device_file = device_folder + '/w1_slave'
+elif os == 'Windows':
+    # testing on windows
+    device_file = 'w1_slave.txt'
+
+class TempSensor:
+    def get_objects(self):
+        data = {
+            'sensor_id': self.id
+        }
+        return jsonify(data)
+
+    def __init__(self, n, i, f):
+        self.id = i
+        self.name = n
+        self.file = f
+
+class TempReading:
+    def get_objects(self):
+        data = {
+            'temperature': self.temp,
+            'sensor': {
+                'name': self.sensor.name,
+                'id': self.sensor.id
+            },
+            'date': self.date
+        }
+        return jsonify(data)
+
+    def __init__(self, t, s):
+        self.temp = t
+        self.sensor = s
+        self.date = datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
 
 def read_temp_raw():
     f = open(device_file, 'r')
@@ -35,7 +72,9 @@ parser.add_argument('task')
 # shows a single todo item and lets you delete a todo item
 class Temperature(Resource):
     def get(self):
-        return read_temp(), datetime.now()
+        s = TempSensor('vand_ud', '28-dummy', device_file)
+        r = TempReading(read_temp(), s)
+        return r.get_objects()
 
 ##
 ## Actually setup the Api resource routing here
