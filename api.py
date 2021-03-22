@@ -62,7 +62,7 @@ def read_temp(device_id):
     equals_pos = lines[1].find('t=')
     if equals_pos != -1:
         temp_string = lines[1][equals_pos+2:]
-        temp_c = float(temp_string) / 1000.0
+        temp_c = int(round(float(temp_string) / 1000.0))
         return temp_c
 
 parser = reqparse.RequestParser()
@@ -96,4 +96,4 @@ api.add_resource(Temperature, '/temp/<sensor_id>')
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host= '0.0.0.0')
+    app.run(debug=True, host= '0.0.0.0', port=80)
